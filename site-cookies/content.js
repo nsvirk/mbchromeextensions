@@ -1,6 +1,12 @@
 // Content script for Site Cookies Viewer
 class CookieContentScript {
   constructor() {
+    this.activeNotifications = new Set();
+    this.notificationQueue = [];
+    this.isProcessingQueue = false;
+    this.lastCookieCount = 0;
+    this.notificationCooldown = 2000; // 2 seconds between notifications
+    this.lastNotificationTime = 0;
     this.init();
   }
 
@@ -21,14 +27,18 @@ class CookieContentScript {
 
   setupCookieMonitoring() {
     // Monitor for cookie changes by watching document.cookie
-    let lastCookieCount = document.cookie.split(";").length;
+    this.lastCookieCount = document.cookie
+      .split(";")
+      .filter((c) => c.trim()).length;
 
     // Check for cookie changes periodically
     setInterval(() => {
-      const currentCookieCount = document.cookie.split(";").length;
-      if (currentCookieCount !== lastCookieCount) {
-        this.onCookieCountChanged(currentCookieCount, lastCookieCount);
-        lastCookieCount = currentCookieCount;
+      const currentCookieCount = document.cookie
+        .split(";")
+        .filter((c) => c.trim()).length;
+      if (currentCookieCount !== this.lastCookieCount) {
+        this.onCookieCountChanged(currentCookieCount, this.lastCookieCount);
+        this.lastCookieCount = currentCookieCount;
       }
     }, 1000);
 
@@ -70,8 +80,10 @@ class CookieContentScript {
       page: window.location.href,
     });
 
-    // You could add visual indicators here if needed
-    this.showCookieChangeIndicator(cookie, removed);
+    // Only show notification for explicit cookie changes, not automatic ones
+    if (cause === "explicit" || cause === "overwrite") {
+      this.showCookieChangeIndicator(cookie, removed);
+    }
   }
 
   onCookieCountChanged(currentCount, previousCount) {
@@ -103,11 +115,29 @@ class CookieContentScript {
   }
 
   showCookieChangeIndicator(cookie, removed) {
+    // Check cooldown to prevent spam
+    const now = Date.now();
+    if (now - this.lastNotificationTime < this.notificationCooldown) {
+      return;
+    }
+    this.lastNotificationTime = now;
+
+    // Create a unique ID for this notification
+    const notificationId = `cookie-notification-${Date.now()}-${Math.random()}`;
+
+    // Check if we already have too many notifications
+    if (this.activeNotifications.size >= 3) {
+      // Remove the oldest notification
+      const oldestId = Array.from(this.activeNotifications)[0];
+      this.removeNotification(oldestId);
+    }
+
     // Create a temporary visual indicator for cookie changes
     const indicator = document.createElement("div");
+    indicator.id = notificationId;
     indicator.style.cssText = `
             position: fixed;
-            top: 20px;
+            top: ${20 + this.activeNotifications.size * 50}px;
             right: 20px;
             background: ${removed ? "#dc3545" : "#28a745"};
             color: white;
@@ -117,23 +147,47 @@ class CookieContentScript {
             z-index: 10000;
             animation: slideInRight 0.3s ease;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 300px;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         `;
 
     indicator.textContent = `${removed ? "❌" : "✅"} Cookie ${
       removed ? "removed" : "added"
     }: ${cookie.name}`;
 
-    document.body.appendChild(indicator);
+    // Add close button
+    const closeBtn = document.createElement("span");
+    closeBtn.textContent = " ×";
+    closeBtn.style.cssText = `
+            float: right;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 8px;
+        `;
+    closeBtn.onclick = () => this.removeNotification(notificationId);
+    indicator.appendChild(closeBtn);
 
-    // Remove after 3 seconds
+    document.body.appendChild(indicator);
+    this.activeNotifications.add(notificationId);
+
+    // Remove after 4 seconds
     setTimeout(() => {
+      this.removeNotification(notificationId);
+    }, 4000);
+  }
+
+  removeNotification(notificationId) {
+    const indicator = document.getElementById(notificationId);
+    if (indicator) {
       indicator.style.animation = "slideOutRight 0.3s ease";
       setTimeout(() => {
         if (indicator.parentNode) {
           indicator.parentNode.removeChild(indicator);
         }
+        this.activeNotifications.delete(notificationId);
       }, 300);
-    }, 3000);
+    }
   }
 
   injectCookieInfo() {
