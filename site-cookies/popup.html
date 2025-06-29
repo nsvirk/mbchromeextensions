@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Site Cookies Viewer</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🍪 Site Cookies</h1>
+        <div class="site-info">
+          <span id="current-site">Loading...</span>
+        </div>
+      </header>
+
+      <div class="controls">
+        <button id="refresh-btn" class="btn">🔄 Refresh</button>
+        <button id="export-btn" class="btn">📥 Export</button>
+        <button id="clear-btn" class="btn">🗑️ Clear All</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Total Cookies:</span>
+          <span id="total-cookies" class="stat-value">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Session Cookies:</span>
+          <span id="session-cookies" class="stat-value">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Persistent Cookies:</span>
+          <span id="persistent-cookies" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="search-container">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search cookies..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="cookies-container">
+        <div id="loading" class="loading">Loading cookies...</div>
+        <div id="no-cookies" class="no-cookies hidden">
+          No cookies found for this site
+        </div>
+        <div id="cookies-list" class="cookies-list"></div>
+      </div>
+
+      <footer>
+        <div class="footer-info">
+          <span id="last-updated">Last updated: Never</span>
+        </div>
+      </footer>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

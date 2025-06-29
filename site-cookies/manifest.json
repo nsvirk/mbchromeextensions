@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Site Cookies Viewer",
+  "version": "1.0.0",
+  "description": "Display all cookies for the current website while browsing",
+  "permissions": ["cookies", "activeTab", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "View Site Cookies"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
